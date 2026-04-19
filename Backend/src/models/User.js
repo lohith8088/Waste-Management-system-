@@ -52,6 +52,37 @@ const userSchema = new mongoose.Schema(
       vehicleType: { type: String, default: "" },
       capacityKg: { type: Number, default: 0 },
     },
+    collectorApplication: {
+      status: {
+        type: String,
+        enum: ["not_applied", "pending", "approved", "rejected"],
+        default: "not_applied",
+      },
+      area: {
+        type: String,
+        default: "",
+      },
+      vehicleDetails: {
+        type: String,
+        default: "",
+      },
+      notes: {
+        type: String,
+        default: "",
+      },
+      rejectionReason: {
+        type: String,
+        default: "",
+      },
+      appliedAt: {
+        type: Date,
+        default: null,
+      },
+      reviewedAt: {
+        type: Date,
+        default: null,
+      },
+    },
     lastKnownLocation: {
       latitude: { type: Number, default: null },
       longitude: { type: Number, default: null },

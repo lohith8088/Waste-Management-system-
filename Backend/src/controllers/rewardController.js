@@ -4,6 +4,7 @@ const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendSuccess } = require("../utils/apiResponse");
 const { calculatePoints } = require("../services/rewardService");
+const { createNotification } = require("../services/notificationService");
 
 const calculateRewards = asyncHandler(async (req, res) => {
   const { wasteType, weight } = req.body;
@@ -50,6 +51,15 @@ const redeemRewards = asyncHandler(async (req, res) => {
     description: `Redemption requested for ${rewardName}`,
     referenceType: "Redemption",
     referenceId: redemption._id,
+  });
+
+  await createNotification({
+    recipientRole: "admin",
+    type: "reward_redemption",
+    title: "New redemption request",
+    message: `${req.user.name || req.user.email} requested redemption for ${rewardName}.`,
+    relatedEntityType: "Redemption",
+    relatedEntityId: redemption._id,
   });
 
   sendSuccess(res, "Reward redemption request created successfully", { redemption }, 201);

@@ -10,6 +10,7 @@ const pickupController = require("./controllers/pickupController");
 const complaintController = require("./controllers/complaintController");
 const routeController = require("./controllers/routeController");
 const trackingController = require("./controllers/trackingController");
+const notificationController = require("./controllers/notificationController");
 const { protect, authorize } = require("./middleware/authMiddleware");
 
 const router = express.Router();
@@ -23,6 +24,8 @@ router.put("/users/profile", protect, authorize("user", "admin"), userController
 router.get("/users/dashboard", protect, authorize("user", "admin"), userController.getUserDashboard);
 
 router.get("/collectors/profile", protect, authorize("collector", "admin"), collectorController.getCollectorProfile);
+router.post("/collectors/apply", protect, authorize("user", "admin"), collectorController.applyAsCollector);
+router.get("/collectors/application", protect, authorize("user", "collector", "admin"), collectorController.getCollectorApplicationStatus);
 router.get("/collectors/tasks", protect, authorize("collector", "admin"), collectorController.getAssignedTasks);
 router.patch("/collectors/tasks/:taskId/complete", protect, authorize("collector", "admin"), collectorController.completeTask);
 router.get("/collectors/route", protect, authorize("collector", "admin"), collectorController.getDailyRoute);
@@ -63,5 +66,9 @@ router.patch("/routes/visit", protect, authorize("collector", "admin"), routeCon
 router.post("/tracking/location", protect, authorize("collector", "admin"), trackingController.updateCollectorLocation);
 router.get("/tracking/collectors/active", protect, authorize("admin", "user", "collector"), trackingController.getAllActiveCollectors);
 router.get("/tracking/collector/:collectorId", protect, authorize("admin", "user", "collector"), trackingController.getLiveCollectorLocation);
+
+router.get("/notifications", protect, authorize("user", "collector", "admin"), notificationController.getNotifications);
+router.patch("/notifications/read-all", protect, authorize("user", "collector", "admin"), notificationController.markAllNotificationsAsRead);
+router.patch("/notifications/:notificationId/read", protect, authorize("user", "collector", "admin"), notificationController.markNotificationAsRead);
 
 module.exports = router;

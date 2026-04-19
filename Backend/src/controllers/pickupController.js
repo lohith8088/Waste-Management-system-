@@ -2,6 +2,7 @@ const PickupRequest = require("../models/PickupRequest");
 const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendSuccess } = require("../utils/apiResponse");
+const { createNotification } = require("../services/notificationService");
 
 const createPickupRequest = asyncHandler(async (req, res) => {
   const { scheduledDate, wasteType, address, location, notes } = req.body;
@@ -18,6 +19,15 @@ const createPickupRequest = asyncHandler(async (req, res) => {
     address,
     location,
     notes,
+  });
+
+  await createNotification({
+    recipientRole: "admin",
+    type: "pickup_request",
+    title: "New pickup request",
+    message: `${req.user.name || req.user.email} created a pickup request for ${address}.`,
+    relatedEntityType: "PickupRequest",
+    relatedEntityId: pickupRequest._id,
   });
 
   sendSuccess(res, "Pickup request created successfully", { pickupRequest }, 201);
@@ -49,6 +59,27 @@ const assignCollector = asyncHandler(async (req, res) => {
   pickupRequest.status = "assigned";
   await pickupRequest.save();
 
+  await Promise.all([
+    createNotification({
+      recipientRole: "collector",
+      recipientId: collectorId,
+      type: "pickup_assigned",
+      title: "New assigned pickup",
+      message: `A new pickup has been assigned to you at ${pickupRequest.address}.`,
+      relatedEntityType: "PickupRequest",
+      relatedEntityId: pickupRequest._id,
+    }),
+    createNotification({
+      recipientRole: "user",
+      recipientId: pickupRequest.userId,
+      type: "pickup_assigned",
+      title: "Collector assigned",
+      message: "A collector has been assigned to your pickup request.",
+      relatedEntityType: "PickupRequest",
+      relatedEntityId: pickupRequest._id,
+    }),
+  ]);
+
   sendSuccess(res, "Collector assigned successfully", { pickupRequest });
 });
 
@@ -72,6 +103,26 @@ const updatePickupStatus = asyncHandler(async (req, res) => {
     pickupRequest.completedAt = new Date();
   }
   await pickupRequest.save();
+
+  await Promise.all([
+    createNotification({
+      recipientRole: "user",
+      recipientId: pickupRequest.userId,
+      type: "pickup_status",
+      title: `Pickup ${status.replace(/_/g, " ")}`,
+      message: `Your pickup request at ${pickupRequest.address} is now ${status.replace(/_/g, " ")}.`,
+      relatedEntityType: "PickupRequest",
+      relatedEntityId: pickupRequest._id,
+    }),
+    createNotification({
+      recipientRole: "admin",
+      type: "pickup_status",
+      title: "Pickup status updated",
+      message: `Pickup at ${pickupRequest.address} was updated to ${status.replace(/_/g, " ")}.`,
+      relatedEntityType: "PickupRequest",
+      relatedEntityId: pickupRequest._id,
+    }),
+  ]);
 
   sendSuccess(res, "Pickup status updated successfully", { pickupRequest });
 });

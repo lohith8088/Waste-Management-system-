@@ -2,6 +2,7 @@ const Route = require("../models/Route");
 const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendSuccess } = require("../utils/apiResponse");
+const { createNotification } = require("../services/notificationService");
 
 const assignDailyRoute = asyncHandler(async (req, res) => {
   const { collectorId, routeDate, area, stops } = req.body;
@@ -23,6 +24,16 @@ const assignDailyRoute = asyncHandler(async (req, res) => {
     { collectorId, routeDate, area: area || collector.area, stops },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
+
+  await createNotification({
+    recipientRole: "collector",
+    recipientId: collectorId,
+    type: "route_assigned",
+    title: "New route assigned",
+    message: `Your route for ${routeDate} in ${area || collector.area || "assigned area"} has been updated.`,
+    relatedEntityType: "Route",
+    relatedEntityId: route._id,
+  });
 
   sendSuccess(res, "Daily route assigned successfully", { route });
 });

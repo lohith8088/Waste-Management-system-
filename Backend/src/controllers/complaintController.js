@@ -1,6 +1,7 @@
 const Complaint = require("../models/Complaint");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendSuccess } = require("../utils/apiResponse");
+const { createNotification } = require("../services/notificationService");
 
 const createComplaint = asyncHandler(async (req, res) => {
   const { title, description, category } = req.body;
@@ -15,6 +16,15 @@ const createComplaint = asyncHandler(async (req, res) => {
     title,
     description,
     category,
+  });
+
+  await createNotification({
+    recipientRole: "admin",
+    type: "complaint_created",
+    title: "New complaint submitted",
+    message: `${req.user.name || req.user.email} submitted complaint "${title}".`,
+    relatedEntityType: "Complaint",
+    relatedEntityId: complaint._id,
   });
 
   sendSuccess(res, "Complaint created successfully", { complaint }, 201);
